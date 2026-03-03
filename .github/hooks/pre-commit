@@ -1,0 +1,37 @@
+#!/bin/bash
+# Pre-commit hook to auto-generate API documentation
+# Install: cp .git/hooks/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+
+echo "🔄 Checking for API changes..."
+
+# Get the project root
+PROJECT_ROOT=$(git rev-parse --show-toplevel)
+DOC_GENERATOR="$PROJECT_ROOT/main.py"
+
+# Check if doc generator exists
+if [ ! -f "$DOC_GENERATOR" ]; then
+    echo "⚠️  API doc generator not found, skipping..."
+    exit 0
+fi
+
+# Check for API changes
+if git diff --cached --name-only | grep -E '\.(py|js|ts|go|java)$' > /dev/null; then
+    echo "📝 API code changes detected, generating documentation..."
+    
+    # Run the doc generator
+    cd "$PROJECT_ROOT"
+    python main.py . -o api-docs.json --title "API Documentation"
+    
+    if [ $? -eq 0 ]; then
+        echo "✅ API documentation generated"
+        
+        # Add the generated docs
+        git add api-docs.json 2>/dev/null || true
+    else
+        echo "⚠️  Documentation generation failed"
+    fi
+else
+    echo "✅ No API changes detected"
+fi
+
+exit 0
