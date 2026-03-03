@@ -1,0 +1,2 @@
+api-doc-generator
+pyyaml>=6.0
