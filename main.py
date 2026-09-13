@@ -3,6 +3,8 @@
 Usage:
     apidocgen <project_path> [--config api-doc.yaml] [--framework ID] ...
     apidocgen frameworks --list
+    apidocgen export --html <out.html> [--spec spec.json] [--title "Title"]
+    apidocgen serve [--spec spec.json] [-p PORT]
 """
 
 import argparse
@@ -213,11 +215,57 @@ def run_scan(argv):
     return 0
 
 
+def run_export(argv):
+    """`apidocgen export --html <out> [--spec <spec>]` - export interactive HTML."""
+    parser = argparse.ArgumentParser(
+        prog="apidocgen export",
+        description="Export API documentation to a self-contained HTML file.",
+    )
+    parser.add_argument("--html", required=True, help="Output HTML file path")
+    parser.add_argument("--spec", default="openapi.json", help="Path to OpenAPI spec JSON")
+    parser.add_argument("--title", default="API Documentation", help="Title for the HTML page")
+    
+    args = parser.parse_args(argv)
+    
+    import json
+    from generator.html import generate_standalone_html
+    
+    with open(args.spec, "r", encoding="utf-8") as f:
+        spec_dict = json.load(f)
+        
+    html_content = generate_standalone_html(spec_dict, title=args.title)
+    
+    with open(args.html, "w", encoding="utf-8") as f:
+        f.write(html_content)
+        
+    print(f"Exported interactive HTML to {args.html}")
+
+
+def run_serve(argv):
+    """`apidocgen serve [--spec <spec>]` - serve interactive HTML locally."""
+    parser = argparse.ArgumentParser(
+        prog="apidocgen serve",
+        description="Serve API documentation locally.",
+    )
+    parser.add_argument("-p", "--port", type=int, default=8000, help="Port to serve on")
+    parser.add_argument("-s", "--spec", default="openapi.json", help="Path to OpenAPI spec JSON")
+    
+    args = parser.parse_args(argv)
+    
+    from serve import serve
+    serve(args.spec, args.port)
+
+
 def main(argv=None):
     """CLI entry point."""
     args = list(sys.argv[1:] if argv is None else argv)
-    if args and args[0] == "frameworks":
-        return run_frameworks(args[1:])
+    if args:
+        if args[0] == "frameworks":
+            return run_frameworks(args[1:])
+        elif args[0] == "export":
+            return run_export(args[1:])
+        elif args[0] == "serve":
+            return run_serve(args[1:])
     return run_scan(args)
 
 
