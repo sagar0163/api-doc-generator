@@ -27,4 +27,4 @@ jobs:
           python -c "from scanner import FlaskScanner, FastAPIScanner, ExpressScanner"
           python -c "from generator import OpenAPIGenerator"
           python -c "from main import detect_framework"
-          echo "All imports successful"
+          python -m unittest discover -s tests -v

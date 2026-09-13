@@ -20,7 +20,7 @@ import re
 # scanners.  ``detect`` keys into :data:`_DETECTORS`.  ``notes`` reflects
 # what the scanner actually does today.
 PLACEHOLDER_FRAMEWORKS = {
-    "apirouter": {
+"apirouter": {
         "name": "FastAPI APIRouter",
         "language": "Python",
         "status": "placeholder",
@@ -521,7 +521,11 @@ def get_scanner_class(framework):
     return getattr(module, meta["cls"])
 
 
-def load_scanner(framework, project_path, ignore_dirs=None):
+def load_scanner(framework, project_path, ignore_dirs=None, include=None):
     """Instantiate the scanner for ``framework`` on ``project_path``."""
     cls = get_scanner_class(framework)
-    return cls(project_path, ignore_dirs=ignore_dirs or DEFAULT_IGNORE)
+    return cls(
+        project_path,
+        ignore_dirs=ignore_dirs or DEFAULT_IGNORE,
+        include=include,
+    )

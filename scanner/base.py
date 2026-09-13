@@ -34,7 +34,7 @@ DEFAULT_IGNORE_DIRS = [
 class APIScanner:
     """Base class for API endpoint scanners."""
 
-    def __init__(self, project_path, ignore_dirs=None):
+    def __init__(self, project_path, ignore_dirs=None, include=None):
         self.project_path = project_path
         self.endpoints = []
         self.ignore_dirs = (
@@ -42,6 +42,7 @@ class APIScanner:
             if ignore_dirs is None
             else list(DEFAULT_IGNORE_DIRS) + list(ignore_dirs)
         )
+        self.include_patterns = list(include) if include else []
 
     def scan(self):
         """Scan project for API endpoints."""
@@ -62,7 +63,9 @@ class APIScanner:
         """Yield file paths under the project, skipping ignored dirs.
 
         Only files whose name ends with one of ``exts`` (if given) are
-        yielded. ``exts`` may be a str or an iterable of str.
+        yielded.  ``exts`` may be a str or an iterable of str.  If
+        ``include`` patterns were set on the scanner, only files matching at
+        least one pattern (relative path or base name) are yielded.
         """
         if isinstance(exts, str):
             exts = (exts,)
@@ -71,7 +74,15 @@ class APIScanner:
             for file in sorted(files):
                 if exts and not file.endswith(tuple(exts)):
                     continue
-                yield os.path.join(root, file)
+                full = os.path.join(root, file)
+                if self.include_patterns:
+                    rel = os.path.relpath(full, self.project_path).replace(os.sep, "/")
+                    if not (
+                        any(fnmatch.fnmatch(rel, p) for p in self.include_patterns)
+                        or any(fnmatch.fnmatch(file, p) for p in self.include_patterns)
+                    ):
+                        continue
+                yield full
 
 
 class Endpoint:

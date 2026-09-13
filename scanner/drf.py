@@ -41,22 +41,9 @@ class DRFScanner(APIScanner):
                 endpoint = Endpoint(f"/{view_name.lower().replace('apiview', '')}", "GET", filepath)
                 self.endpoints.append(endpoint)
             
-            # @action(detail=False, methods=['get'])
-            action_pattern = r"@action\(.*?methods=\[([^\]]+)\]"
-            matches = re.finditer(action_pattern, content)
-            
-            for match in matches:
-                methods = match.group(1)
-                endpoint = Endpoint("/custom-action", "GET", filepath)
-                self.endpoints.append(endpoint)
-            
-            # @api_view(['GET', 'POST'])
-            apiview_decorator = r"@api_view\(([^)]+)\)"
-            matches = re.finditer(apiview_decorator, content)
-            
-            for match in matches:
-                endpoint = Endpoint("/function-based", "GET", filepath)
-                self.endpoints.append(endpoint)
-                    
+            # @action(detail=False, methods=['get']) and @api_view([...]) both
+            # resolve to URLs only through the router; emit no fabricated
+            # paths here (the django scanner resolves them from urls.py).
+                        
         except Exception:
             pass

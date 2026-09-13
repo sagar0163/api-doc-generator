@@ -7,8 +7,8 @@ from scanner.base import APIScanner, Endpoint
 class DjangoScanner(APIScanner):
     """Scan Django projects for API endpoints."""
 
-    def __init__(self, project_path, ignore_dirs=None):
-        super().__init__(project_path, ignore_dirs=ignore_dirs)
+    def __init__(self, project_path, ignore_dirs=None, include=None):
+        super().__init__(project_path, ignore_dirs=ignore_dirs, include=include)
         self._url_views = {}
         self._api_views = {}
 

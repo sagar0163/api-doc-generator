@@ -1,7 +1,6 @@
 """NestJS scanner - Detect endpoints in NestJS TypeScript applications"""
 
 import re
-import os
 from scanner.base import APIScanner, Endpoint
 
 
@@ -10,12 +9,8 @@ class NestJSScanner(APIScanner):
     
     def scan(self):
         """Scan NestJS controllers."""
-        for root, dirs, files in os.walk(self.project_path):
-            dirs[:] = [d for d in dirs if d not in ["node_modules", ".git", "dist"]]
-            
-            for file in files:
-                if file.endswith(".ts"):
-                    self._scan_file(os.path.join(root, file))
+        for filepath in self._walk({".ts"}):
+            self._scan_file(filepath)
         return self.endpoints
     
     def _scan_file(self, filepath):
