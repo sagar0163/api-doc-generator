@@ -147,6 +147,7 @@ def run_scan(argv):
         help="Framework id to force (see `apidocgen frameworks --list`)",
     )
     parser.add_argument("-o", "--output", default=None, help="Output file path")
+    parser.add_argument("--ai-enrich", action="store_true", help="Enable AI enrichment")
     parser.add_argument("-t", "--title", default=None, help="API title")
     parser.add_argument("-v", "--version", default=None, help="API version")
 
@@ -158,6 +159,8 @@ def run_scan(argv):
 
     try:
         cfg = configlib.load_config(args.config)
+        if args.ai_enrich:
+            cfg["ai"]["enabled"] = True
     except (ValueError, RuntimeError) as e:
         print(f"Error: {e}")
         return 1

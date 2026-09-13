@@ -14,6 +14,13 @@ DEFAULT_CONFIG = {
     "ignore": [".git", "node_modules", "venv", "__pycache__", "dist"],
     "output": "api-docs.json",
     "server": {"url": "http://localhost:3000", "description": None},
+    "ai": {
+        "enabled": False,
+        "provider": "openai",
+        "api_key_env": "OPENAI_API_KEY",
+        "model": "gpt-4",
+        "fields": ["description", "example", "operationSummary"]
+    },
 }
 
 
@@ -82,6 +89,9 @@ def load_config(path=None):
 
     if "server" in config and isinstance(config["server"], dict):
         merged["server"] = {**DEFAULT_CONFIG["server"], **config["server"]}
+
+    if "ai" in config and isinstance(config["ai"], dict):
+        merged["ai"] = {**DEFAULT_CONFIG["ai"], **config["ai"]}
 
     if "framework" in config and config["framework"] is not None:
         merged["framework"] = str(config["framework"])
