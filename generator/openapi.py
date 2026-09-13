@@ -63,10 +63,21 @@ class OpenAPIGenerator:
         return paths
     
     def to_json(self, indent=2):
-        """Export to JSON format."""
-        return json.dumps(self.generate(), indent=indent)
+        """Export to JSON format.
+
+        Keys are always emitted in sorted order so identical specs produce
+        byte-identical files (safe for CI diffing).  A single trailing
+        newline is appended for parity with ``to_yaml``.
+        """
+        return json.dumps(self.generate(), indent=indent, sort_keys=True) + "\n"
     
     def to_yaml(self):
-        """Export to YAML format."""
+        """Export to YAML format.
+
+        ``sort_keys=True`` keeps key order deterministic across runs, so
+        identical specs always serialize to identical bytes.
+        """
         import yaml
-        return yaml.dump(self.generate(), default_flow_style=False)
+        return yaml.safe_dump(
+            self.generate(), default_flow_style=False, sort_keys=True
+        )
