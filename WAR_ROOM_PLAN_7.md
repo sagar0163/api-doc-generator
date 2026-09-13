@@ -1,6 +1,6 @@
 - [x] Add config support for `ai` section
 - [x] Add `--ai-enrich` CLI flag
-- [ ] Implement AI enrichment logic and mockable provider calls
-- [ ] Implement merge logic adding `x-aidoc-generated: true` and `> _AI-generated_`
-- [ ] Update `check` logic to handle drift.ignore and AI fields
-- [ ] Add tests for offline/no-key, with-key, check command, and failure handling
+- [x] Implement AI enrichment logic and mockable provider calls
+- [x] Implement merge logic adding `x-aidoc-generated: true` and `> _AI-generated_`
+- [x] Update `check` logic to handle drift.ignore and AI fields
+- [x] Add tests for offline/no-key, with-key, check command, and failure handling
