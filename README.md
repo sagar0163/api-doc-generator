@@ -21,7 +21,7 @@
    ```
 2. **Generate**
    ```bash
-   apidocgen generate /path/to/project
+   apidocgen /path/to/project
    ```
 3. **View Docs**
    Open the generated `api-docs.json` (or `.yaml`) in Swagger UI or Redoc!
@@ -81,9 +81,9 @@ Auto-detection currently supports the following frameworks. For a full breakdown
 Force a specific scanner or define custom configuration via `api-doc.yaml`.
 
 ```bash
-apidocgen generate /path/to/project --config api-doc.yaml
-apidocgen generate /path/to/project --framework nestjs
-apidocgen generate /path/to/project -o api-docs.yaml
+apidocgen /path/to/project --config api-doc.yaml
+apidocgen /path/to/project --framework nestjs
+apidocgen /path/to/project -o api-docs.yaml
 ```
 
 **`api-doc.yaml` Example:**
