@@ -10,8 +10,8 @@
 
 - **Deterministic Spine**: Guaranteed structural mapping directly from your framework routes; no hallucinated endpoints.
 - **Drift-Checked Docs**: Your spec is generated from code. Run it in CI to ensure docs are always in sync with implementation.
-- **Self-Contained HTML**: Easily export out-of-the-box UI without complex toolchains.
-- **Optional AI**: Augment the structural backbone with LLM-generated descriptions, not hallucinated structure.
+- **Self-Contained HTML**: (Planned) Easily export out-of-the-box UI without complex toolchains.
+- **Optional AI**: (Planned) Augment the structural backbone with LLM-generated descriptions, not hallucinated structure.
 
 ## Quickstart
 
@@ -75,6 +75,7 @@ Auto-detection currently supports the following frameworks. For a full breakdown
 | actix | Rust | supported |
 | rocket | Rust | supported |
 | vapor | Swift | supported |
+| gin_enhanced | Go | supported |
 
 ## Advanced Usage
 
