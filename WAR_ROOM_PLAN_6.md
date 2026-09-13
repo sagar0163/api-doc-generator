@@ -1,5 +1,5 @@
 - [x] Download `swagger-ui-dist` CSS and JS files into a local `vendor` directory.
 - [x] Create HTML generator function that inlines the CSS, JS, and the OpenAPI spec JSON into a single standalone HTML file.
-- [ ] Refactor `serve.py` to use this new HTML generator (serve the standalone page).
+- [x] Refactor `serve.py` to use this new HTML generator (serve the standalone page).
 - [ ] Add `export` command to `main.py` CLI (`apidocgen export --html <out> [--spec <spec>]`).
 - [ ] Add `serve` command to `main.py` CLI (`apidocgen serve [--spec <spec>]`).

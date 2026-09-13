@@ -6,6 +6,8 @@ from http.server import HTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
 
 
+from generator.html import generate_standalone_html
+
 class SwaggerUIHandler(SimpleHTTPRequestHandler):
     """Serve Swagger UI with generated OpenAPI spec."""
     
@@ -19,39 +21,6 @@ class SwaggerUIHandler(SimpleHTTPRequestHandler):
         self.send_header('Access-Control-Allow-Origin', '*')
         super().end_headers()
 
-
-def generate_swagger_index(openapi_json_path):
-    """Generate Swagger UI HTML."""
-    return """<!DOCTYPE html>
-<html>
-<head>
-    <title>API Documentation</title>
-    <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5.0.0/swagger-ui.css" />
-    <style>
-        body { margin: 0; padding: 0; }
-    </style>
-</head>
-<body>
-    <div id="swagger-ui"></div>
-    <script src="https://unpkg.com/swagger-ui-dist@5.0.0/swagger-ui-bundle.js"></script>
-    <script>
-        window.onload = function() {
-            window.ui = SwaggerUIBundle({
-                url: 'openapi.json',
-                dom_id: '#swagger-ui',
-                deepLinking: true,
-                presets: [
-                    SwaggerUIBundle.presets.apis,
-                    SwaggerUIBundle.SwaggerUIStandalonePreset
-                ],
-                layout: "StandaloneLayout"
-            });
-        };
-    </script>
-</body>
-</html>"""
-
-
 def serve(spec_path="openapi.json", port=8000):
     """
     Start a local server with Swagger UI.
@@ -64,9 +33,13 @@ def serve(spec_path="openapi.json", port=8000):
     spec_dir = Path(spec_path).parent
     os.chdir(spec_dir)
     
+    # Read the spec
+    with open(Path(spec_path).name, "r", encoding="utf-8") as f:
+        spec_dict = json.load(f)
+        
     # Generate Swagger UI index
     index_path = Path(spec_dir) / "index.html"
-    index_path.write_text(generate_swagger_index(spec_path))
+    index_path.write_text(generate_standalone_html(spec_dict))
     
     # Start server
     server = HTTPServer(('localhost', port), SwaggerUIHandler)
