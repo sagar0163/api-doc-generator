@@ -12,6 +12,7 @@ import sys
 import config as configlib
 import scanner.registry as registry
 from generator.openapi import OpenAPIGenerator
+from generator.ai import AIEnricher
 
 
 def detect_framework(project_path):
@@ -204,10 +205,21 @@ def run_scan(argv):
     for endpoint in endpoints:
         generator.add_endpoint(endpoint)
 
+    spec = generator.generate()
+    enricher = AIEnricher(cfg)
+    if enricher.is_active():
+        try:
+            spec = enricher.enrich(spec)
+        except Exception as e:
+            print(f"Error during AI enrichment: {e}")
+            return 1
+
     if output.endswith((".yaml", ".yml")):
-        payload = generator.to_yaml()
+        import yaml
+        payload = yaml.dump(spec, default_flow_style=False)
     else:
-        payload = generator.to_json()
+        import json
+        payload = json.dumps(spec, indent=2)
 
     with open(output, "w") as f:
         f.write(payload)
