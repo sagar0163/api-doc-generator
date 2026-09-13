@@ -10,12 +10,8 @@ class AspNetScanner(APIScanner):
     
     def scan(self):
         """Scan .NET controllers."""
-        for root, dirs, files in os.walk(self.project_path):
-            dirs[:] = [d for d in dirs if d not in ["bin", "obj", ".git"]]
-            
-            for file in files:
-                if file.endswith(".cs"):
-                    self._scan_file(os.path.join(root, file))
+        for filepath in self._walk({".cs"}):
+            self._scan_file(filepath)
         return self.endpoints
     
     def _scan_file(self, filepath):

@@ -10,12 +10,8 @@ class EchoScanner(APIScanner):
     
     def scan(self):
         """Scan Echo routes."""
-        for root, dirs, files in os.walk(self.project_path):
-            dirs[:] = [d for d in dirs if d not in ["vendor", "node_modules", ".git"]]
-            
-            for file in files:
-                if file.endswith(".go"):
-                    self._scan_file(os.path.join(root, file))
+        for filepath in self._walk({".go"}):
+            self._scan_file(filepath)
         return self.endpoints
     
     def _scan_file(self, filepath):

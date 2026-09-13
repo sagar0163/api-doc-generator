@@ -10,12 +10,8 @@ class ActixScanner(APIScanner):
     
     def scan(self):
         """Scan Actix-web routes."""
-        for root, dirs, files in os.walk(self.project_path):
-            dirs[:] = [d for d in dirs if d not in ["target", ".git"]]
-            
-            for file in files:
-                if file.endswith(".rs"):
-                    self._scan_file(os.path.join(root, file))
+        for filepath in self._walk({".rs"}):
+            self._scan_file(filepath)
         return self.endpoints
     
     def _scan_file(self, filepath):

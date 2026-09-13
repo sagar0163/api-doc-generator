@@ -11,23 +11,9 @@ class ExpressScanner(APIScanner):
     
     def scan(self):
         """Scan directory for Express routes."""
-        # First scan JS/TS files
-        for root, dirs, files in os.walk(self.project_path):
-            # Skip node_modules
-            if "node_modules" in root:
-                continue
-            for file in files:
-                if file.endswith((".js", ".ts")):
-                    self._scan_file(os.path.join(root, file))
-        
-        # Also check route files in routes/ directory
-        routes_dir = os.path.join(self.project_path, "routes")
-        if os.path.exists(routes_dir):
-            for root, dirs, files in os.walk(routes_dir):
-                for file in files:
-                    if file.endswith((".js", ".ts")):
-                        self._scan_file(os.path.join(root, file))
-        
+        # _walk() already prunes node_modules/dist/etc.
+        for filepath in self._walk({".js", ".ts"}):
+            self._scan_file(filepath)
         return self.endpoints
     
     def _scan_file(self, filepath):

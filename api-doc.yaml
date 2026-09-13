@@ -1,0 +1,26 @@
+# API Documentation Generator - project config
+#
+# Values in this file can be overridden per-run via CLI flags (see README).
+
+# Auto-detect the framework, or force one of the supported framework ids.
+# Run `apidocgen frameworks --list` to see supported vs placeholder ids.
+framework: auto
+
+# Glob patterns for files to scan.  Empty = scan everything (honoring ignore).
+include: []
+
+# Directories/path components to skip during scanning.  These are additive
+# on top of built-in ignores (.git, node_modules, venv, __pycache__, dist).
+ignore:
+  - node_modules
+  - venv
+  - __pycache__
+  - dist
+  - .git
+
+# Output file for the generated API documentation.
+output: api-docs.json
+
+server:
+  url: http://localhost:3000
+  description: Local development server

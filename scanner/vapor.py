@@ -10,12 +10,8 @@ class VaporScanner(APIScanner):
     
     def scan(self):
         """Scan Vapor routes."""
-        for root, dirs, files in os.walk(self.project_path):
-            dirs[:] = [d for d in dirs if d not in [".build", ".git", "DerivedData"]]
-            
-            for file in files:
-                if file.endswith(".swift"):
-                    self._scan_file(os.path.join(root, file))
+        for filepath in self._walk({".swift"}):
+            self._scan_file(filepath)
         return self.endpoints
     
     def _scan_file(self, filepath):

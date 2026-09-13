@@ -10,14 +10,8 @@ class SpringBootScanner(APIScanner):
     
     def scan(self):
         """Scan directory for Spring Boot controllers."""
-        for root, dirs, files in os.walk(self.project_path):
-            # Skip build directories
-            if any(x in root for x in ["target", "build", ".gradle", "node_modules"]):
-                continue
-                
-            for file in files:
-                if file.endswith(".java"):
-                    self._scan_file(os.path.join(root, file))
+        for filepath in self._walk({".java"}):
+            self._scan_file(filepath)
         return self.endpoints
     
     def _scan_file(self, filepath):

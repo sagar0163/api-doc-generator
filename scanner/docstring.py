@@ -106,13 +106,14 @@ class DocstringParser:
     def to_openapi_params(self):
         """Convert to OpenAPI parameter format."""
         openapi_params = []
-        
+
         for func_name, doc in self.docs.items():
-            for param_name, description in doc.get("parameters", {}).openapi_params.append({
-                "name": param_name,
-                "in": "query",
-                "description": description,
-                "required": True
-            })
-        
+            for param_name, description in doc.get("parameters", {}).items():
+                openapi_params.append({
+                    "name": param_name,
+                    "in": "query",
+                    "description": description,
+                    "required": True,
+                })
+
         return openapi_params

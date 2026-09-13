@@ -10,12 +10,8 @@ class DRFScanner(APIScanner):
     
     def scan(self):
         """Scan DRF viewsets and API views."""
-        for root, dirs, files in os.walk(self.project_path):
-            dirs[:] = [d for d in dirs if d not in ["__pycache__", ".git", "venv", "env", "migrations"]]
-            
-            for file in files:
-                if file.endswith(".py"):
-                    self._scan_file(os.path.join(root, file))
+        for filepath in self._walk({".py"}):
+            self._scan_file(filepath)
         return self.endpoints
     
     def _scan_file(self, filepath):
@@ -45,22 +41,9 @@ class DRFScanner(APIScanner):
                 endpoint = Endpoint(f"/{view_name.lower().replace('apiview', '')}", "GET", filepath)
                 self.endpoints.append(endpoint)
             
-            # @action(detail=False, methods=['get'])
-            action_pattern = r"@action\(.*?methods=\[([^\]]+)\]"
-            matches = re.finditer(action_pattern, content)
-            
-            for match in matches:
-                methods = match.group(1)
-                endpoint = Endpoint("/custom-action", "GET", filepath)
-                self.endpoints.append(endpoint)
-            
-            # @api_view(['GET', 'POST'])
-            apiview_decorator = r"@api_view\(([^)]+)\)"
-            matches = re.finditer(apiview_decorator, content)
-            
-            for match in matches:
-                endpoint = Endpoint("/function-based", "GET", filepath)
-                self.endpoints.append(endpoint)
-                    
+            # @action(detail=False, methods=['get']) and @api_view([...]) both
+            # resolve to URLs only through the router; emit no fabricated
+            # paths here (the django scanner resolves them from urls.py).
+                        
         except Exception:
             pass

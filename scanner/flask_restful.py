@@ -10,12 +10,8 @@ class FlaskRestfulScanner(APIScanner):
     
     def scan(self):
         """Scan Flask-RESTful resources."""
-        for root, dirs, files in os.walk(self.project_path):
-            dirs[:] = [d for d in dirs if d not in ["__pycache__", ".git", "venv", "env"]]
-            
-            for file in files:
-                if file.endswith(".py"):
-                    self._scan_file(os.path.join(root, file))
+        for filepath in self._walk({".py"}):
+            self._scan_file(filepath)
         return self.endpoints
     
     def _scan_file(self, filepath):
@@ -40,20 +36,6 @@ class FlaskRestfulScanner(APIScanner):
                     if f"def {method}(self" in class_content:
                         endpoint = Endpoint(f"/{resource_name}", method.upper(), filepath)
                         self.endpoints.append(endpoint)
-            
-            # @marshal_with
-            marshal_pattern = r"@marshal_with\(([^)]+)\)"
-            matches = re.finditer(marshal_pattern, content)
-            
-            for match in matches:
-                endpoint = Endpoint("/marshaled-endpoint", "GET", filepath)
-                self.endpoints.append(endpoint)
-            
-            # @reqparse
-            reqparse_pattern = r"@reqparse\."
-            if re.search(reqparse_pattern, content):
-                endpoint = Endpoint("/parsed-request", "POST", filepath)
-                self.endpoints.append(endpoint)
                     
         except Exception:
             pass
