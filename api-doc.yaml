@@ -24,3 +24,15 @@ output: api-docs.json
 server:
   url: http://localhost:3000
   description: Local development server
+
+# Drift detection (`apidocgen check` / `apidocgen generate --fail-on-drift`).
+check:
+  # fail = exit 1 when the committed spec is stale; warn = print but exit 0.
+  mode: fail
+
+# Dot-paths whose differences never count as drift (wildcards: * = one key,
+# ** = any number of keys).  Use e.g. "**.example" to ignore example values.
+drift:
+  ignore:
+    - info.description
+    - "**.example"

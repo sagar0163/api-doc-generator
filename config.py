@@ -14,6 +14,13 @@ DEFAULT_CONFIG = {
     "ignore": [".git", "node_modules", "venv", "__pycache__", "dist"],
     "output": "api-docs.json",
     "server": {"url": "http://localhost:3000", "description": None},
+    # Drift detection (issue #4).  ``check.mode`` controls the ``check``
+    # subcommand's exit code: ``fail`` (default) exits 1 on drift, ``warn``
+    # prints the report but still exits 0 (pre-adoption).  ``drift.ignore``
+    # lists dot-paths (with ``*``/``**`` wildcards) whose differences should
+    # never count as drift (e.g. ``info.description``, ``**.example``).
+    "check": {"mode": "fail"},
+    "drift": {"ignore": []},
 }
 
 
@@ -82,6 +89,20 @@ def load_config(path=None):
 
     if "server" in config and isinstance(config["server"], dict):
         merged["server"] = {**DEFAULT_CONFIG["server"], **config["server"]}
+
+    if "check" in config and isinstance(config["check"], dict):
+        merged["check"] = {**DEFAULT_CONFIG["check"], **config["check"]}
+    mode = merged["check"].get("mode", "fail")
+    if mode not in ("fail", "warn"):
+        raise ValueError(
+            f"invalid check.mode '{mode}' in config: expected 'fail' or 'warn'"
+        )
+
+    if "drift" in config and isinstance(config["drift"], dict):
+        merged["drift"] = {**DEFAULT_CONFIG["drift"], **config["drift"]}
+    ignores = merged["drift"].get("ignore")
+    if isinstance(ignores, list):
+        merged["drift"]["ignore"] = [str(i) for i in ignores]
 
     if "framework" in config and config["framework"] is not None:
         merged["framework"] = str(config["framework"])
