@@ -219,7 +219,7 @@ def run_export(argv):
     """`apidocgen export --html <out> [--spec <spec>]` - export interactive HTML."""
     parser = argparse.ArgumentParser(
         prog="apidocgen export",
-        description="Export API documentation to a self-contained HTML file.",
+        description="Export API documentation to a self-contained HTML file (approx 1.5MB).",
     )
     parser.add_argument("--html", required=True, help="Output HTML file path")
     parser.add_argument("--spec", default="openapi.json", help="Path to OpenAPI spec JSON")
