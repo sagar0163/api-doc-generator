@@ -10,12 +10,8 @@ class KtorScanner(APIScanner):
     
     def scan(self):
         """Scan Ktor routes."""
-        for root, dirs, files in os.walk(self.project_path):
-            dirs[:] = [d for d in dirs if d not in ["build", ".gradle", ".git"]]
-            
-            for file in files:
-                if file.endswith(".kt"):
-                    self._scan_file(os.path.join(root, file))
+        for filepath in self._walk({".kt"}):
+            self._scan_file(filepath)
         return self.endpoints
     
     def _scan_file(self, filepath):

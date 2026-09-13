@@ -4,8 +4,8 @@ Branch: `war-room-issue-2`. Commit after each completed subtask.
 
 ## Subtasks
 
-- [ ] 1. Add `_walk()` + default ignore dirs to `scanner/base.py`
-- [ ] 2. Create `scanner/registry.py`: framework metadata (supported vs placeholder), per-framework detectors, scanner loading
+- [x] 1. Add `_walk()` + default ignore dirs to `scanner/base.py`
+- [x] 2. Create `scanner/registry.py`: framework metadata (supported vs placeholder), per-framework detectors, scanner loading
 - [ ] 3. Migrate walk-based scanners to `scanner/_walk()` so config ignore/venv/node_modules filtering is honored everywhere
 - [ ] 4. Fix `scanner/gin.py` (dead `sub_pattern` block, group-route handling)
 - [ ] 5. Fix `scanner/django.py` (fragile `@api_view` regex, resolves decorated-view routes via `path(...)`)
