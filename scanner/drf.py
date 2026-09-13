@@ -1,12 +1,12 @@
-"""Django REST Framework scanner - Enhanced Django API detection"""
+"""Django REST Framework scanner - Enhanced Django API detection using AST"""
 
-import re
 import os
+import ast
+import re
 from scanner.base import APIScanner, Endpoint
 
-
 class DRFScanner(APIScanner):
-    """Scan Django REST Framework projects for API endpoints."""
+    """Scan Django REST Framework projects for API endpoints using AST."""
     
     def scan(self):
         """Scan DRF viewsets and API views."""
@@ -19,31 +19,44 @@ class DRFScanner(APIScanner):
         try:
             with open(filepath, "r") as f:
                 content = f.read()
-            
-            # class UserViewSet(viewsets.ModelViewSet):
-            viewset_pattern = r"class\s+(\w+ViewSet|ViewSet)\(viewsets\.\w+\):"
-            matches = re.finditer(viewset_pattern, content)
-            
-            for match in matches:
-                viewset_name = match.group(1)
-                # Standard DRF actions
-                actions = ["list", "create", "retrieve", "update", "partial_update", "destroy"]
-                for action in actions:
-                    endpoint = Endpoint(f"/{viewset_name.lower().replace('viewset', '')}", "GET", filepath)
-                    self.endpoints.append(endpoint)
-            
-            # class UserAPIView(APIView):
-            apiview_pattern = r"class\s+(\w+APIView)\(APIView\):"
-            matches = re.finditer(apiview_pattern, content)
-            
-            for match in matches:
-                view_name = match.group(1)
-                endpoint = Endpoint(f"/{view_name.lower().replace('apiview', '')}", "GET", filepath)
-                self.endpoints.append(endpoint)
-            
-            # @action(detail=False, methods=['get']) and @api_view([...]) both
-            # resolve to URLs only through the router; emit no fabricated
-            # paths here (the django scanner resolves them from urls.py).
-                        
+            tree = ast.parse(content)
         except Exception:
-            pass
+            return
+            
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ClassDef):
+                bases = [base.id if isinstance(base, ast.Name) else (base.attr if isinstance(base, ast.Attribute) else '') for base in node.bases]
+                
+                # Check if it's a ViewSet
+                is_viewset = any('ViewSet' in b for b in bases)
+                is_apiview = any('APIView' in b for b in bases)
+                
+                if is_viewset:
+                    viewset_name = node.name
+                    path = f"/{viewset_name.lower().replace('viewset', '')}"
+                    
+                    actions = ["list", "create", "retrieve", "update", "partial_update", "destroy"]
+                    for action in actions:
+                        method = "GET"
+                        if action == "create": method = "POST"
+                        elif action in ["update", "partial_update"]: method = "PUT"
+                        elif action == "destroy": method = "DELETE"
+                        
+                        endpoint = Endpoint(path, method, filepath)
+                        
+                        if action in ["retrieve", "update", "partial_update", "destroy"]:
+                            endpoint.path = f"{path}/{{id}}"
+                            endpoint.parameters.append({
+                                "name": "id",
+                                "in": "path",
+                                "required": True,
+                                "schema": {"type": "integer"}
+                            })
+                            
+                        self.endpoints.append(endpoint)
+                        
+                elif is_apiview:
+                    view_name = node.name
+                    path = f"/{view_name.lower().replace('apiview', '')}"
+                    endpoint = Endpoint(path, "GET", filepath)
+                    self.endpoints.append(endpoint)
