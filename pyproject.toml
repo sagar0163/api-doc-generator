@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "api-doc-generator"
+version = "1.0.0"
+description = "Auto-scan projects and generate OpenAPI/Swagger API documentation"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+dependencies = [
+    "PyYAML>=6.0",
+]
+
+[project.scripts]
+apidocgen = "apidocgen.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["apidocgen*", "scanner*", "generator*"]
