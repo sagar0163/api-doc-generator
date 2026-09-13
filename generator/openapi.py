@@ -12,6 +12,7 @@ class OpenAPIGenerator:
         self.version = version
         self.endpoints = []
         self.servers = []
+        self.schemas = {}
     
     def add_endpoint(self, endpoint):
         """Add an endpoint to the spec."""
@@ -23,6 +24,10 @@ class OpenAPIGenerator:
         if description:
             server["description"] = description
         self.servers.append(server)
+
+    def add_schema(self, name, schema):
+        """Add a component schema."""
+        self.schemas[name] = schema
     
     def generate(self):
         """Generate OpenAPI specification."""
@@ -36,15 +41,28 @@ class OpenAPIGenerator:
             "servers": self.servers if self.servers else [{"url": "http://localhost:3000"}],
             "paths": self._generate_paths()
         }
+        if self.schemas:
+            spec["components"] = {"schemas": self.schemas}
         
         return spec
     
+    def _normalize_path(self, path):
+        import re
+        # Flask: <type:name> or <name>
+        path = re.sub(r'<[^>:]+:([^>]+)>', r'{\1}', path)
+        path = re.sub(r'<([^>]+)>', r'{\1}', path)
+        # Express: :name
+        # Be careful not to replace https://... but paths usually start with /
+        # We only match path segments starting with :
+        path = re.sub(r'(?<=/):([a-zA-Z0-9_]+)', r'{\1}', path)
+        return path
+
     def _generate_paths(self):
         """Convert endpoints to OpenAPI paths format."""
         paths = {}
         
         for endpoint in self.endpoints:
-            path = endpoint.path
+            path = self._normalize_path(endpoint.path)
             
             if path not in paths:
                 paths[path] = {}
@@ -53,12 +71,14 @@ class OpenAPIGenerator:
             
             paths[path][method] = {
                 "summary": endpoint.handler,
-                "description": endpoint.description or f"Endpoint: {endpoint.path}",
-                "parameters": endpoint.parameters,
+                "description": endpoint.description or f"Endpoint: {path}",
+                "parameters": endpoint.parameters or [],
                 "responses": endpoint.responses or {
                     "200": {"description": "Successful response"}
                 }
             }
+            if hasattr(endpoint, 'requestBody') and endpoint.requestBody:
+                paths[path][method]['requestBody'] = endpoint.requestBody
         
         return paths
     
