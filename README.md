@@ -10,7 +10,7 @@
 
 - **Deterministic Spine**: Guaranteed structural mapping directly from your framework routes; no hallucinated endpoints.
 - **Drift-Checked Docs**: Your spec is generated from code. Run it in CI to ensure docs are always in sync with implementation.
-- **Self-Contained HTML**: (Planned) Easily export out-of-the-box UI without complex toolchains.
+- **Self-Contained HTML**: Export a single, dependency-free `apidocgen export --html` page — Swagger UI CSS/JS and your spec are all inlined, so it renders offline (perfect for emailing, embedding, or committing to git).
 - **Optional AI**: (Planned) Augment the structural backbone with LLM-generated descriptions, not hallucinated structure.
 
 ## Quickstart
@@ -87,6 +87,42 @@ apidocgen /path/to/project --framework nestjs
 apidocgen /path/to/project -o api-docs.yaml
 ```
 
+### Interactive, offline HTML export
+
+```bash
+# One file you can open, email, or embed - no network needed
+apidocgen export --html api-docs.html --spec api-docs.json --title "My API"
+```
+
+Everything is inlined into that single file: the Swagger UI CSS and JS bundle
+(vendored under `vendor/swagger-ui-dist/`) and the OpenAPI spec itself (inline
+SVG favicon too). Opening it makes **zero network requests** — no CDN scripts,
+no external fonts. Optional extras:
+
+```bash
+apidocgen export --html api-docs.html --spec api-docs.json --title "My API" \
+    --icon favicon.png --timestamp        # embed a favicon + "generated at" stamp
+```
+
+### Live preview (no CDN references either)
+
+```bash
+apidocgen serve --spec api-docs.json --port 8000
+# Swagger UI: http://127.0.0.1:8000/docs   Raw spec: http://127.0.0.1:8000/openapi.json
+```
+
+`serve` serves the same standalone page: the HTML served to the browser has
+Swagger UI fully inlined (no CDN references), so previewing offline works the
+same way as the exported artifact.
+
+#### Artifact size
+
+Inlining `swagger-ui-dist@5.17.14` inflates the output:
+`swagger-ui-bundle.js` (~1.45 MB) + `swagger-ui.css` (~152 KB) are embedded,
+so a small spec yields a ~1.6 MB HTML file. Size grows with the spec size
+(the spec JSON is embedded as-is). ~1.6 MB is reasonable to share via git or
+email; the file is plain text and compresses well too.
+
 **`api-doc.yaml` Example:**
 ```yaml
 framework: auto
@@ -105,4 +141,3 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for how to add a new framework scanner, f
 
 **TODOs:**
 - AI description augmentation hook
-- Native self-contained HTML export command
