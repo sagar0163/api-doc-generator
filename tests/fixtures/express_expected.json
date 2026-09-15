@@ -1,0 +1,51 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Express Fixture API",
+    "version": "1.0.0",
+    "description": "Auto-generated API documentation"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000"
+    }
+  ],
+  "paths": {
+    "/hello": {
+      "get": {
+        "summary": "tests/fixtures/express_project/app.js",
+        "description": "Endpoint: /hello",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/account": {
+      "get": {
+        "summary": "tests/fixtures/express_project/app.js",
+        "description": "Endpoint: /account",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/users": {
+      "post": {
+        "summary": "tests/fixtures/express_project/app.js",
+        "description": "Endpoint: /users",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    }
+  }
+}

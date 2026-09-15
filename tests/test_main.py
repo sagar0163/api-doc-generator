@@ -35,7 +35,7 @@ class AutoDetectTests(unittest.TestCase):
     def test_django_fixture_auto_detected(self):
         """Issue #2 acceptance: a Django project is detected with no flags."""
         warnings = Warnings()
-        endpoints = scan_project(DJANGO_FIXTURE, framework=None, warn=warnings)
+        endpoints, _ = scan_project(DJANGO_FIXTURE, framework=None, warn=warnings)
         paths = {(ep.method, ep.path) for ep in endpoints}
         self.assertIn(("GET", "users/"), paths)
         self.assertIn(("POST", "users/"), paths)
@@ -64,7 +64,7 @@ class OverrideTests(unittest.TestCase):
         warnings = Warnings()
         # This tree is a Django project (no package.json at all), but the
         # fake .ts file proves the NestJS scanner ran.
-        endpoints = scan_project(DJANGO_FIXTURE, framework="nestjs", warn=warnings)
+        endpoints, _ = scan_project(DJANGO_FIXTURE, framework="nestjs", warn=warnings)
         self.assertTrue(endpoints)
         self.assertTrue(all(ep.handler.endswith(".ts") for ep in endpoints))
         paths = {(ep.method, ep.path) for ep in endpoints}
@@ -73,7 +73,7 @@ class OverrideTests(unittest.TestCase):
     def test_framework_override_not_from_detection(self):
         detected = registry.detect(NESTJS_FIXTURE)
         self.assertIn("nestjs", detected)
-        endpoints = scan_project(NESTJS_FIXTURE, framework="nestjs", warn=Warnings())
+        endpoints, _ = scan_project(NESTJS_FIXTURE, framework="nestjs", warn=Warnings())
         paths = {(ep.method, ep.path) for ep in endpoints}
         self.assertIn(("GET", "/api/users"), paths)
 
@@ -91,7 +91,7 @@ class IgnoreConfigTests(unittest.TestCase):
         warnings = Warnings()
         cfg = configlib.DEFAULT_CONFIG.copy()
         cfg["ignore"] = list(cfg["ignore"]) + ["legacy"]
-        endpoints = scan_project(DJANGO_FIXTURE, framework="nestjs", config=cfg, warn=warnings)
+        endpoints, _ = scan_project(DJANGO_FIXTURE, framework="nestjs", config=cfg, warn=warnings)
         # 'legacy' is ignored, so the forced NestJS scan finds nothing.
         self.assertEqual(endpoints, [])
 
@@ -99,7 +99,7 @@ class IgnoreConfigTests(unittest.TestCase):
         warnings = Warnings()
         cfg = configlib.DEFAULT_CONFIG.copy()
         cfg["include"] = ["**/*.py"]
-        endpoints = scan_project(DJANGO_FIXTURE, framework=None, config=cfg, warn=warnings)
+        endpoints, _ = scan_project(DJANGO_FIXTURE, framework=None, config=cfg, warn=warnings)
         self.assertTrue(all(ep.handler.endswith(".py") for ep in endpoints))
 
 

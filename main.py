@@ -15,6 +15,7 @@ import sys
 
 import config as configlib
 import scanner.registry as registry
+import ai_enrich
 from generator.html import build_standalone_html
 from generator.openapi import OpenAPIGenerator
 
@@ -49,7 +50,9 @@ def scan_project(project_path, framework=None, config=None, warn=None):
         # Explicit override: must be supported, otherwise fail loudly.
         cls = registry.get_scanner_class(framework)
         scanner = cls(project_path, ignore_dirs=ignore_dirs, include=include)
-        return _safe_scan(scanner)
+        eps = _safe_scan(scanner)
+        schemas = scanner.schemas if hasattr(scanner, 'schemas') else {}
+        return eps, schemas
 
     detected = registry.detect(project_path)
     if detected:
@@ -63,12 +66,16 @@ def scan_project(project_path, framework=None, config=None, warn=None):
         ids = [fid for fid in registry.SUPPORTED_FRAMEWORKS if fid != "gin_enhanced"]
 
     endpoints = []
+    schemas = {}
     for fid in ids:
         scanner = registry.load_scanner(
             fid, project_path, ignore_dirs=ignore_dirs, include=include
         )
-        endpoints.extend(_safe_scan(scanner))
-    return endpoints
+        eps = _safe_scan(scanner)
+        endpoints.extend(eps)
+        if hasattr(scanner, 'schemas') and scanner.schemas:
+            schemas.update(scanner.schemas)
+    return endpoints, schemas
 
 
 def _safe_scan(scanner):
@@ -154,6 +161,7 @@ def run_scan(argv):
     parser.add_argument("-o", "--output", default=None, help="Output file path")
     parser.add_argument("-t", "--title", default=None, help="API title")
     parser.add_argument("-v", "--version", default=None, help="API version")
+    parser.add_argument("--ai-enrich", action="store_true", help="Enable AI enrichment for descriptions and examples")
 
     args = parser.parse_args(argv)
 
@@ -194,7 +202,7 @@ def run_scan(argv):
 
     print(f"Scanning {args.project_path} for API endpoints...")
 
-    endpoints = scan_project(args.project_path, framework=framework, config=cfg)
+    endpoints, schemas = scan_project(args.project_path, framework=framework, config=cfg)
 
     print(f"Found {len(endpoints)} endpoints")
 
@@ -205,11 +213,26 @@ def run_scan(argv):
 
     for endpoint in endpoints:
         generator.add_endpoint(endpoint)
+        
+    for name, schema in schemas.items():
+        generator.add_schema(name, schema)
 
+    spec = generator.generate()
+
+    if args.ai_enrich or cfg.get("ai", {}).get("enabled"):
+        ai_cfg = cfg.get("ai", {})
+        try:
+            spec = ai_enrich.enrich_spec(spec, ai_cfg)
+        except Exception as e:
+            print(f"Error during AI enrichment: {e}")
+            return 1
+
+    import yaml
+    import json
     if output.endswith((".yaml", ".yml")):
-        payload = generator.to_yaml()
+        payload = yaml.dump(spec, sort_keys=False)
     else:
-        payload = generator.to_json()
+        payload = json.dumps(spec, indent=2)
 
     with open(output, "w") as f:
         f.write(payload)

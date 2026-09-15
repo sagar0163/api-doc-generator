@@ -1,0 +1,60 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Flask Fixture API",
+    "version": "1.0.0",
+    "description": "Auto-generated API documentation"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000"
+    }
+  ],
+  "paths": {
+    "/users/{user_id}": {
+      "get": {
+        "summary": "tests/fixtures/flask_project/app.py",
+        "description": "Endpoint: /users/{user_id}",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/users/": {
+      "post": {
+        "summary": "tests/fixtures/flask_project/app.py",
+        "description": "Endpoint: /users/",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        }
+      }
+    },
+    "/missing": {
+      "get": {
+        "summary": "tests/fixtures/flask_project/app.py",
+        "description": "Endpoint: /missing",
+        "parameters": [],
+        "responses": {
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    }
+  }
+}
