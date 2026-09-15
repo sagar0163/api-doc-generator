@@ -1,6 +1,6 @@
 # apidocgen
 
-[![docs-fresh](https://img.shields.io/badge/docs-fresh-brightgreen.svg)]()
+[![docs-fresh](https://github.com/sagar0163/api-doc-generator/actions/workflows/docs.yml/badge.svg)](https://github.com/sagar0163/api-doc-generator/actions/workflows/docs.yml)
 [![build](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
 [![PyPI](https://img.shields.io/pypi/v/apidocgen.svg)]()
 
@@ -19,11 +19,15 @@
    ```bash
    pip install apidocgen
    ```
-2. **Generate**
+2. **Generate (Local)**
    ```bash
    apidocgen /path/to/project
    ```
-3. **View Docs**
+3. **GitHub Action (CI)**
+   ```yaml
+   - uses: sagar0163/api-doc-generator@main
+   ```
+4. **View Docs**
    Open the generated `api-docs.json` (or `.yaml`) in Swagger UI or Redoc!
 
 ## Sample Output
