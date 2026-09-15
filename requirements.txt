@@ -1,3 +1,2 @@
-api-doc-generator
 pyyaml>=6.0
 openapi-spec-validator

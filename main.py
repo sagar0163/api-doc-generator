@@ -3,6 +3,7 @@
 Usage:
     apidocgen <project_path> [--config api-doc.yaml] [--framework ID] ...
     apidocgen frameworks --list
+    apidocgen check <project_path> [--output api-docs.json] [--fail-on-drift]
 """
 
 import argparse
@@ -168,26 +169,12 @@ def run_scan(argv):
         print(f"Error: {e}")
         return 1
 
-    framework = args.framework
-    if framework is None and cfg.get("framework") not in (None, "auto"):
-        framework = cfg["framework"]
-
-    if framework is not None and framework not in registry.FRAMEWORKS:
-        print(
-            f"Error: unknown framework '{framework}'. "
-            "Run `apidocgen frameworks --list` to see supported frameworks."
-        )
-        return 1
-
-    if framework in registry.PLACEHOLDER_FRAMEWORKS:
-        meta = registry.PLACEHOLDER_FRAMEWORKS[framework]
-        print(
-            f"Error: framework '{framework}' ({meta['name']}) is only a "
-            "placeholder - no scanner is implemented for it. Excluded from "
-            "auto-detect so it never produces garbage. Run "
-            "`apidocgen frameworks --list` to see what IS supported."
-        )
-        return 1
+    framework = _resolve_framework(args.framework, cfg)
+    if framework is not None:
+        err = _validate_framework(framework)
+        if err is not None:
+            print(err)
+            return 1
 
     output = args.output or cfg.get("output") or "api-docs.json"
     title = args.title or "My API"
@@ -195,7 +182,122 @@ def run_scan(argv):
 
     print(f"Scanning {args.project_path} for API endpoints...")
 
-    endpoints, schemas = scan_project(args.project_path, framework=framework, config=cfg)
+    payload = _build_payload(args.project_path, cfg, framework, title, version, output)
+
+    with open(output, "w") as f:
+        f.write(payload)
+
+    print(f"API documentation generated: {output}")
+    return 0
+
+
+def run_check(argv):
+    """`apidocgen check <project_path> [...]` - fail when committed docs are stale.
+
+    Regenerates the spec in memory and compares it against the committed
+    ``--output`` file.  Exits non-zero with an actionable message when the two
+    differ, so CI can gate PRs on documentation drift.  ``--fail-on-drift`` is
+    accepted for parity with the GitHub Action input; checking always fails on
+    drift.
+    """
+    parser = argparse.ArgumentParser(
+        prog="apidocgen check",
+        description="Check that committed API docs match the current source.",
+    )
+    parser.add_argument("project_path", help="Path to project directory")
+    parser.add_argument(
+        "-c", "--config", default=None,
+        help="Path to config file (api-doc.yaml / api-doc.json)",
+    )
+    parser.add_argument(
+        "-f", "--framework", default=None,
+        help="Framework id to force (see `apidocgen frameworks --list`)",
+    )
+    parser.add_argument("-o", "--output", default=None, help="Committed spec file to compare")
+    parser.add_argument(
+        "--fail-on-drift", action="store_true",
+        help="Fail when committed docs differ from generated docs (always-on).",
+    )
+
+    args = parser.parse_args(argv)
+
+    if not os.path.exists(args.project_path):
+        print(f"Error: Project path '{args.project_path}' does not exist")
+        return 1
+
+    try:
+        cfg = configlib.load_config(args.config)
+    except (ValueError, RuntimeError) as e:
+        print(f"Error: {e}")
+        return 1
+
+    framework = _resolve_framework(args.framework, cfg)
+    if framework is not None:
+        err = _validate_framework(framework)
+        if err is not None:
+            print(err)
+            return 1
+
+    output = args.output or cfg.get("output") or "api-docs.json"
+
+    if not os.path.exists(output):
+        print(
+            f"Error: committed docs file '{output}' not found. "
+            "Run `apidocgen <project_path> --output {0}` to generate it.".format(output)
+        )
+        return 1
+
+    print(f"Scanning {args.project_path} for API endpoints...")
+
+    payload = _build_payload(args.project_path, cfg, framework, "My API", "1.0.0", output)
+
+    with open(output) as f:
+        committed = f.read()
+
+    if payload == committed:
+        print(f"Docs are up to date: {output}")
+        return 0
+
+    print(
+        f"::error::docs are stale - {output} does not match the generated output."
+    )
+    print(
+        f"::error::run `apidocgen {args.project_path} --output {output}` (or push through "
+        "ci: `uses: sagar0163/api-doc-generator@main` with `fail-on-drift: true`), "
+        "commit the regenerated spec, and re-push."
+    )
+    return 1
+
+
+def _resolve_framework(cli_framework, cfg):
+    """Pick the framework: CLI flag wins, then config, then None for auto."""
+    framework = cli_framework
+    if framework is None and cfg.get("framework") not in (None, "auto"):
+        framework = cfg["framework"]
+    return framework
+
+
+def _validate_framework(framework):
+    """Return an error message string, or None if ``framework`` is usable."""
+    if framework not in registry.FRAMEWORKS:
+        return (
+            f"Error: unknown framework '{framework}'. "
+            "Run `apidocgen frameworks --list` to see supported frameworks."
+        )
+    if framework in registry.PLACEHOLDER_FRAMEWORKS:
+        meta = registry.PLACEHOLDER_FRAMEWORKS[framework]
+        return (
+            f"Error: framework '{framework}' ({meta['name']}) is only a "
+            "placeholder - no scanner is implemented for it. Excluded from "
+            "auto-detect so it never produces garbage. Run "
+            "`apidocgen frameworks --list` to see what IS supported."
+        )
+    return None
+
+
+def _build_payload(project_path, cfg, framework, title, version, output):
+    """Scan ``project_path`` and render the spec payload (yaml or json)."""
+    endpoints, schemas = scan_project(project_path, framework=framework, config=cfg)
 
     print(f"Found {len(endpoints)} endpoints")
 
@@ -206,20 +308,13 @@ def run_scan(argv):
 
     for endpoint in endpoints:
         generator.add_endpoint(endpoint)
-        
+
     for name, schema in schemas.items():
         generator.add_schema(name, schema)
 
     if output.endswith((".yaml", ".yml")):
-        payload = generator.to_yaml()
-    else:
-        payload = generator.to_json()
-
-    with open(output, "w") as f:
-        f.write(payload)
-
-    print(f"API documentation generated: {output}")
-    return 0
+        return generator.to_yaml()
+    return generator.to_json()
 
 
 def main(argv=None):
@@ -227,6 +322,8 @@ def main(argv=None):
     args = list(sys.argv[1:] if argv is None else argv)
     if args and args[0] == "frameworks":
         return run_frameworks(args[1:])
+    if args and args[0] == "check":
+        return run_check(args[1:])
     return run_scan(args)
 
 
