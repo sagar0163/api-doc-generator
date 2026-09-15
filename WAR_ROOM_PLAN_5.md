@@ -1,6 +1,0 @@
-# Issue 5 Plan: Publish GitHub Action
-
-- [x] Create `action.yml` at repo root (composite action)
-- [x] Create `.github/workflows/docs.yml` for drift checking and generation
-- [x] Update `.github/workflows/test.yml` to run pytest
-- [ ] Update `README.md` with badge and setup instructions
