@@ -1,0 +1,9 @@
+- [ ] Add AI config parameters to `config.py` (`ai.enabled`, `ai.provider`, `ai.api_key_env`, `ai.model`, `ai.fields`).
+- [ ] Add `--ai-enrich` CLI flag to `main.py` that overrides `ai.enabled: true`.
+- [ ] Implement AI provider clients (OpenAI, Anthropic, Ollama or a generic mock/wrapper if the specific API is not needed, wait, acceptance criteria say "ask provider (batched, rate-limited)... Provider response failures fail the run"). Let's create an `ai_enrich.py` module.
+- [ ] Write logic in `ai_enrich.py` to traverse the generated OpenAPI dict, collect items needing enrichment, prompt the AI provider, and inject `description`, `example`, and `operationSummary` with `x-aidoc-generated: true`.
+- [ ] Implement the merge back into the OpenAPI generator (`main.py`).
+- [ ] Handle missing API key gracefully (error clearly or no-ops without touching spec).
+- [ ] Update `main.py` to invoke AI enrichment before writing to the output file.
+- [ ] Update `check` logic (does `check` command exist? "check does not false-positive on enriched-only field changes when drift.ignore includes them"). Wait, is there a `check` command? Let's grep for `check` in the codebase.
+- [ ] Add tests for the AI enrichment.
