@@ -30,7 +30,8 @@ runs:
       shell: bash
       run: pip install -r ${{ github.action_path }}/requirements.txt
 
-    - name: Run apidocgen
+    - name: Run apidocgen (generate)
+      if: inputs.fail-on-drift != 'true'
       shell: bash
       run: |
         ARGS=("${{ inputs.source-dir }}")
@@ -46,7 +47,11 @@ runs:
       if: inputs.fail-on-drift == 'true'
       shell: bash
       run: |
-        if ! git diff --exit-code; then
-          echo "::error::docs are stale — run apidocgen generate"
-          exit 1
+        ARGS=("${{ inputs.source-dir }}" "--fail-on-drift")
+        if [ -n "${{ inputs.config }}" ]; then
+          ARGS+=("--config" "${{ inputs.config }}")
         fi
+        if [ -n "${{ inputs.output }}" ]; then
+          ARGS+=("--output" "${{ inputs.output }}")
+        fi
+        python ${{ github.action_path }}/apidocgen check "${ARGS[@]}"

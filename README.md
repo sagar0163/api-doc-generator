@@ -15,20 +15,22 @@
 
 ## Quickstart
 
-1. **Install**
-   ```bash
-   pip install apidocgen
-   ```
-2. **Generate (Local)**
-   ```bash
-   apidocgen /path/to/project
-   ```
-3. **GitHub Action (CI)**
-   ```yaml
-   - uses: sagar0163/api-doc-generator@main
-   ```
-4. **View Docs**
-   Open the generated `api-docs.json` (or `.yaml`) in Swagger UI or Redoc!
+```bash
+pip install apidocgen                               # 1. install
+apidocgen /path/to/project -o api-docs.json         # 2. generate
+```
+
+Gate your PRs on drive-free docs with the GitHub Action:
+
+```yaml
+- uses: sagar0163/api-doc-generator@main
+  with:
+    source-dir: .
+    output: api-docs.json
+    fail-on-drift: true
+```
+
+View the generated `api-docs.json` (or `.yaml`) in Swagger UI or Redoc.
 
 ## Sample Output
 
