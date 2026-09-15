@@ -1,0 +1,7 @@
+- [x] Update Express scanner for handler signatures/JSDoc
+- [x] Implement AST-based DRF scanner
+- [x] Implement AST-based Flask scanner
+- [x] Create FastAPI and Flask fixtures
+- [x] Implement AST-based FastAPI scanner
+- [x] Add components/schemas support and path deduplication/normalization
+- [x] Generate golden files for fixtures and write OpenAPI validation tests

@@ -44,7 +44,9 @@ def scan_project(project_path, framework=None, config=None, warn=None):
         # Explicit override: must be supported, otherwise fail loudly.
         cls = registry.get_scanner_class(framework)
         scanner = cls(project_path, ignore_dirs=ignore_dirs, include=include)
-        return _safe_scan(scanner)
+        eps = _safe_scan(scanner)
+        schemas = scanner.schemas if hasattr(scanner, 'schemas') else {}
+        return eps, schemas
 
     detected = registry.detect(project_path)
     if detected:
@@ -58,12 +60,16 @@ def scan_project(project_path, framework=None, config=None, warn=None):
         ids = [fid for fid in registry.SUPPORTED_FRAMEWORKS if fid != "gin_enhanced"]
 
     endpoints = []
+    schemas = {}
     for fid in ids:
         scanner = registry.load_scanner(
             fid, project_path, ignore_dirs=ignore_dirs, include=include
         )
-        endpoints.extend(_safe_scan(scanner))
-    return endpoints
+        eps = _safe_scan(scanner)
+        endpoints.extend(eps)
+        if hasattr(scanner, 'schemas') and scanner.schemas:
+            schemas.update(scanner.schemas)
+    return endpoints, schemas
 
 
 def _safe_scan(scanner):
@@ -189,7 +195,7 @@ def run_scan(argv):
 
     print(f"Scanning {args.project_path} for API endpoints...")
 
-    endpoints = scan_project(args.project_path, framework=framework, config=cfg)
+    endpoints, schemas = scan_project(args.project_path, framework=framework, config=cfg)
 
     print(f"Found {len(endpoints)} endpoints")
 
@@ -200,6 +206,9 @@ def run_scan(argv):
 
     for endpoint in endpoints:
         generator.add_endpoint(endpoint)
+        
+    for name, schema in schemas.items():
+        generator.add_schema(name, schema)
 
     if output.endswith((".yaml", ".yml")):
         payload = generator.to_yaml()

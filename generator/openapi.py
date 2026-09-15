@@ -63,11 +63,14 @@ class OpenAPIGenerator:
         
         for endpoint in self.endpoints:
             path = self._normalize_path(endpoint.path)
+            method = endpoint.method.lower()
+            
+            # OpenAPI only supports specific methods
+            if method not in ['get', 'put', 'post', 'delete', 'options', 'head', 'patch', 'trace']:
+                continue
             
             if path not in paths:
                 paths[path] = {}
-            
-            method = endpoint.method.lower()
             
             paths[path][method] = {
                 "summary": endpoint.handler,
