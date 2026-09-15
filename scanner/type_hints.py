@@ -137,6 +137,8 @@ class TypeHintExtractor:
         
         for name, type_info in self.type_definitions.items():
             if isinstance(type_info, dict) and "type" in type_info:
-                schemas[name] = type_info
+                schema_def = type_info.copy()
+                schema_def.pop("location", None)
+                schemas[name] = schema_def
         
         return schemas
