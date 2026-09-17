@@ -8,7 +8,7 @@ import tempfile
 import unittest
 
 import config as configlib
-from main import run_check
+from main import main, run_check
 
 FIXTURES = os.path.join(os.path.dirname(__file__), "fixtures")
 EXPRESS_FIXTURE = os.path.join(FIXTURES, "express_project")
@@ -61,6 +61,33 @@ class CheckCommandTests(unittest.TestCase):
     def test_missing_project_fails(self):
         code = run_check([os.path.join(self.tmpdir, "nope"), "--output", self.output])
         self.assertEqual(code, 1)
+
+
+class GenerateAliasTests(unittest.TestCase):
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.tmpdir, ignore_errors=True)
+        self.project = shutil.copytree(EXPRESS_FIXTURE, os.path.join(self.tmpdir, "proj"))
+        self.output = os.path.join(self.tmpdir, "spec.json")
+
+    def test_generate_alias_writes_spec(self):
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            code = main(["generate", self.project, "--output", self.output])
+        self.assertEqual(code, 0)
+        self.assertTrue(os.path.exists(self.output))
+        self.assertIn("API documentation generated", buf.getvalue())
+
+    def test_generate_alias_matches_plain_invocation(self):
+        plain = os.path.join(self.tmpdir, "plain.json")
+        with contextlib.redirect_stdout(io.StringIO()):
+            main([self.project, "--output", self.output])
+            main(["generate", self.project, "--output", plain])
+        with open(self.output) as f:
+            alias_spec = f.read()
+        with open(plain) as f:
+            plain_spec = f.read()
+        self.assertEqual(alias_spec, plain_spec)
 
 
 if __name__ == "__main__":

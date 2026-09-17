@@ -16,11 +16,12 @@
 ## Quickstart
 
 ```bash
-pip install apidocgen                               # 1. install
-apidocgen /path/to/project -o api-docs.json         # 2. generate
+pip install apidocgen                                           # 1. install
+apidocgen generate /path/to/project -o api-docs.json           # 2. generate
+apidocgen check /path/to/project -o api-docs.json --fail-on-drift  # 3. gate PRs
 ```
 
-Gate your PRs on drive-free docs with the GitHub Action:
+Gate your PRs on drift-free docs with the GitHub Action:
 
 ```yaml
 - uses: sagar0163/api-doc-generator@main
@@ -88,9 +89,9 @@ Auto-detection currently supports the following frameworks. For a full breakdown
 Force a specific scanner or define custom configuration via `api-doc.yaml`.
 
 ```bash
-apidocgen /path/to/project --config api-doc.yaml
-apidocgen /path/to/project --framework nestjs
-apidocgen /path/to/project -o api-docs.yaml
+apidocgen generate /path/to/project --config api-doc.yaml
+apidocgen generate /path/to/project --framework nestjs
+apidocgen generate /path/to/project -o api-docs.yaml
 ```
 
 **`api-doc.yaml` Example:**

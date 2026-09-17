@@ -1,6 +1,7 @@
 """Main CLI tool for API Documentation Generator.
 
 Usage:
+    apidocgen generate <project_path> [--config api-doc.yaml] [--output api-docs.json] ...
     apidocgen <project_path> [--config api-doc.yaml] [--framework ID] ...
     apidocgen frameworks --list
     apidocgen check <project_path> [--output api-docs.json] [--fail-on-drift]
@@ -139,9 +140,9 @@ def print_matrix(supported, placeholders):
 
 
 def run_scan(argv):
-    """`apidocgen <project_path> [...]` - scan a project and emit a spec."""
+    """`apidocgen generate <project_path> [...]` - scan a project and emit a spec."""
     parser = argparse.ArgumentParser(
-        prog="apidocgen",
+        prog="apidocgen generate",
         description="API Documentation Generator - Auto-scan projects and generate API specs",
     )
     parser.add_argument("project_path", help="Path to project directory")
@@ -264,7 +265,7 @@ def run_check(argv):
     )
     print(
         f"Run `apidocgen generate` to fix:\n"
-        f"  apidocgen {args.project_path} --output {output}\n"
+        f"  apidocgen generate {args.project_path} --output {output}\n"
         f"Or let CI do it: uses: sagar0163/api-doc-generator@main with fail-on-drift: true\n"
         "Then commit the regenerated spec and re-push."
     )
@@ -326,6 +327,8 @@ def main(argv=None):
         return run_frameworks(args[1:])
     if args and args[0] == "check":
         return run_check(args[1:])
+    if args and args[0] == "generate":
+        return run_scan(args[1:])
     return run_scan(args)
 
 

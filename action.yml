@@ -41,7 +41,7 @@ runs:
         if [ -n "${{ inputs.output }}" ]; then
           ARGS+=("--output" "${{ inputs.output }}")
         fi
-        python ${{ github.action_path }}/apidocgen "${ARGS[@]}"
+        python ${{ github.action_path }}/apidocgen generate "${ARGS[@]}"
 
     - name: Check for drift
       if: ${{ inputs.fail-on-drift == 'true' }}
