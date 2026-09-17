@@ -1,5 +1,7 @@
 """Tests for `apidocgen check` (drift gating, Issue #5)."""
 
+import contextlib
+import io
 import os
 import shutil
 import tempfile
@@ -36,11 +38,16 @@ class CheckCommandTests(unittest.TestCase):
 
     def test_stale_docs_fail_with_actionable_message(self):
         generate(self.project, self.output)
-        path = os.path.join(self.tmpdir, self.output)
-        with open(path, "a") as f:
+        with open(self.output, "a") as f:
             f.write("\ntampered")
-        code = self._run()
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            code = self._run()
         self.assertEqual(code, 1)
+        msg = buf.getvalue()
+        self.assertIn("docs are stale", msg)
+        self.assertIn("apidocgen", msg)
+        self.assertIn("--output", msg)
 
     def test_accepts_fail_on_drift_flag(self):
         generate(self.project, self.output)

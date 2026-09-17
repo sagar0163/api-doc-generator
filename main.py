@@ -195,10 +195,10 @@ def run_check(argv):
     """`apidocgen check <project_path> [...]` - fail when committed docs are stale.
 
     Regenerates the spec in memory and compares it against the committed
-    ``--output`` file.  Exits non-zero with an actionable message when the two
-    differ, so CI can gate PRs on documentation drift.  ``--fail-on-drift`` is
-    accepted for parity with the GitHub Action input; checking always fails on
-    drift.
+    ``--output`` file.  Exits non-zero with an actionable message pointing at
+    ``apidocgen generate`` when the two differ, so CI can gate PRs on
+    documentation drift.  ``--fail-on-drift`` is accepted for parity with the
+    GitHub Action input; checking always fails on drift.
     """
     parser = argparse.ArgumentParser(
         prog="apidocgen check",
@@ -259,12 +259,14 @@ def run_check(argv):
         return 0
 
     print(
-        f"::error::docs are stale - {output} does not match the generated output."
+        f"::error title=Docs are stale::docs are stale - the committed spec "
+        f"'{output}' does not match what the current source would generate."
     )
     print(
-        f"::error::run `apidocgen {args.project_path} --output {output}` (or push through "
-        "ci: `uses: sagar0163/api-doc-generator@main` with `fail-on-drift: true`), "
-        "commit the regenerated spec, and re-push."
+        f"Run `apidocgen generate` to fix:\n"
+        f"  apidocgen {args.project_path} --output {output}\n"
+        f"Or let CI do it: uses: sagar0163/api-doc-generator@main with fail-on-drift: true\n"
+        "Then commit the regenerated spec and re-push."
     )
     return 1
 
