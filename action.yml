@@ -31,7 +31,7 @@ runs:
       run: pip install -r ${{ github.action_path }}/requirements.txt
 
     - name: Run apidocgen (generate)
-      if: inputs.fail-on-drift != 'true'
+      if: ${{ inputs.fail-on-drift != 'true' }}
       shell: bash
       run: |
         ARGS=("${{ inputs.source-dir }}")
@@ -44,7 +44,7 @@ runs:
         python ${{ github.action_path }}/apidocgen "${ARGS[@]}"
 
     - name: Check for drift
-      if: inputs.fail-on-drift == 'true'
+      if: ${{ inputs.fail-on-drift == 'true' }}
       shell: bash
       run: |
         ARGS=("${{ inputs.source-dir }}" "--fail-on-drift")
