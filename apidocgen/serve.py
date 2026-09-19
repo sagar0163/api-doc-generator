@@ -18,24 +18,25 @@ class SwaggerUIHandler(SimpleHTTPRequestHandler):
         super().end_headers()
 
 
-def generate_swagger_index(openapi_json_path):
-    """Generate Swagger UI HTML."""
-    return """<!DOCTYPE html>
+def generate_swagger_index(spec_path):
+    """Generate Swagger UI HTML pointing at the given spec file."""
+    spec_name = os.path.basename(spec_path)
+    return f"""<!DOCTYPE html>
 <html>
 <head>
     <title>API Documentation</title>
     <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5.0.0/swagger-ui.css" />
     <style>
-        body { margin: 0; padding: 0; }
+        body {{ margin: 0; padding: 0; }}
     </style>
 </head>
 <body>
     <div id="swagger-ui"></div>
     <script src="https://unpkg.com/swagger-ui-dist@5.0.0/swagger-ui-bundle.js"></script>
     <script>
-        window.onload = function() {
-            window.ui = SwaggerUIBundle({
-                url: 'openapi.json',
+        window.onload = function() {{
+            window.ui = SwaggerUIBundle({{
+                url: '{spec_name}',
                 dom_id: '#swagger-ui',
                 deepLinking: true,
                 presets: [
@@ -43,8 +44,8 @@ def generate_swagger_index(openapi_json_path):
                     SwaggerUIBundle.SwaggerUIStandalonePreset
                 ],
                 layout: "StandaloneLayout"
-            });
-        };
+            }});
+        }};
     </script>
 </body>
 </html>"""
