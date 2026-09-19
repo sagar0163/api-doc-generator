@@ -17,6 +17,10 @@
 - [x] Add `apidocgen generate` subcommand alias so the AC recipe is a real command
 - [x] Add GenerateAliasTests for the new subcommand
 - [x] Update action.yml generate step to use `apidocgen generate`
-- [ ] Update README to use `apidocgen generate` and confirm 3-line badge/snippet present
-- [ ] Validate `action.yml` / workflows (done: valid YAML, if-expressions correct)
-- [ ] Final review pass and commit
+- [x] Update README to use `apidocgen generate` and confirm 3-line badge/snippet present
+- [x] Validate `action.yml` / workflows (actionlint passes, YAML valid, if-expressions correct)
+- [x] Merge origin/main (issues #6/#7) into branch and resolve main.py conflicts (46 tests pass)
+
+## Final
+- [x] Final review pass and merge of origin/main (#6/#7) — 46 tests pass, actionlint clean, drift check green
+- [ ] Delete plan file, final commit, push
