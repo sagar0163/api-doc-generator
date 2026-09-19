@@ -87,9 +87,9 @@ class OpenAPIGenerator:
     
     def to_json(self, indent=2):
         """Export to JSON format."""
-        return json.dumps(self.generate(), indent=indent)
+        return json.dumps(self.generate(), indent=indent, sort_keys=True)
     
     def to_yaml(self):
         """Export to YAML format."""
         import yaml
-        return yaml.dump(self.generate(), default_flow_style=False)
+        return yaml.dump(self.generate(), default_flow_style=False, sort_keys=True)
