@@ -21,6 +21,12 @@ DEFAULT_CONFIG = {
         "model": "gpt-3.5-turbo",
         "fields": ["description", "example", "operationSummary"],
     },
+    "check": {
+        "mode": "fail",
+    },
+    "drift": {
+        "ignore": [],
+    },
 }
 
 def _read_file(path):
@@ -91,6 +97,12 @@ def load_config(path=None):
 
     if "ai" in config and isinstance(config["ai"], dict):
         merged["ai"] = {**DEFAULT_CONFIG["ai"], **config["ai"]}
+
+    if "check" in config and isinstance(config["check"], dict):
+        merged["check"] = {**DEFAULT_CONFIG["check"], **config["check"]}
+
+    if "drift" in config and isinstance(config["drift"], dict):
+        merged["drift"] = {**DEFAULT_CONFIG["drift"], **config["drift"]}
 
     if "framework" in config and config["framework"] is not None:
         merged["framework"] = str(config["framework"])
