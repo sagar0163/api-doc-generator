@@ -1,0 +1,7 @@
+- [ ] Add `check.mode` and `drift.ignore` configuration logic
+- [ ] Make generation deterministic (stable sort for JSON/YAML)
+- [ ] Implement `check` command to compare in-memory vs disk spec
+- [ ] Implement `diff` command to output path-level and item-level changes
+- [ ] Add `--fail-on-drift` flag to `generate` command
+- [ ] Write tests for deterministic generation and drift detection commands
+- [ ] Update README.md with documentation for the new commands
