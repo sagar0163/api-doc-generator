@@ -5,14 +5,20 @@ Usage:
     apidocgen <project_path> [--config api-doc.yaml] [--framework ID] ...
     apidocgen frameworks --list
     apidocgen check <project_path> [--output api-docs.json] [--fail-on-drift]
+    apidocgen export --html out.html [--spec spec.json] [--title "X"]
+    apidocgen serve [--spec spec.json] [--port PORT]
 """
 
 import argparse
+import datetime
+import json
 import os
 import sys
 
 import config as configlib
 import scanner.registry as registry
+import ai_enrich
+from generator.html import build_standalone_html
 from generator.openapi import OpenAPIGenerator
 
 
@@ -157,6 +163,7 @@ def run_scan(argv):
     parser.add_argument("-o", "--output", default=None, help="Output file path")
     parser.add_argument("-t", "--title", default=None, help="API title")
     parser.add_argument("-v", "--version", default=None, help="API version")
+    parser.add_argument("--ai-enrich", action="store_true", help="Enable AI enrichment for descriptions and examples")
 
     args = parser.parse_args(argv)
 
@@ -183,7 +190,12 @@ def run_scan(argv):
 
     print(f"Scanning {args.project_path} for API endpoints...")
 
-    payload = _build_payload(args.project_path, cfg, framework, title, version, output)
+    payload = _build_payload(
+        args.project_path, cfg, framework, title, version, output,
+        ai_enrich=args.ai_enrich,
+    )
+    if payload is None:
+        return 1
 
     with open(output, "w") as f:
         f.write(payload)
@@ -298,8 +310,8 @@ def _validate_framework(framework):
     return None
 
 
-def _build_payload(project_path, cfg, framework, title, version, output):
-    """Scan ``project_path`` and render the spec payload (yaml or json)."""
+def _build_payload(project_path, cfg, framework, title, version, output, ai_enrich=False):
+    """Scan ``project_path`` and render the spec payload (yaml or json str)."""
     endpoints, schemas = scan_project(project_path, framework=framework, config=cfg)
 
     print(f"Found {len(endpoints)} endpoints")
@@ -315,9 +327,103 @@ def _build_payload(project_path, cfg, framework, title, version, output):
     for name, schema in schemas.items():
         generator.add_schema(name, schema)
 
+    spec = generator.generate()
+
+    if ai_enrich or cfg.get("ai", {}).get("enabled"):
+        ai_cfg = cfg.get("ai", {})
+        try:
+            spec = ai_enrich.enrich_spec(spec, ai_cfg)
+        except Exception as e:
+            print(f"Error during AI enrichment: {e}")
+            return None
+
     if output.endswith((".yaml", ".yml")):
-        return generator.to_yaml()
-    return generator.to_json()
+        import yaml
+        return yaml.dump(spec, default_flow_style=False)
+    return json.dumps(spec, indent=2)
+
+
+def _load_spec_text(spec_path):
+    """Read a spec file and return (spec_json_str, spec_dict)."""
+    with open(spec_path, "r", encoding="utf-8") as f:
+        raw = f.read()
+    if spec_path.lower().endswith((".yaml", ".yml")):
+        import yaml
+        spec_dict = yaml.safe_load(raw)
+        return json.dumps(spec_dict, indent=2), spec_dict
+    spec_dict = json.loads(raw) if raw.strip().startswith(("{", "[")) else None
+    return raw, spec_dict
+
+
+def run_export(argv):
+    """`apidocgen export --html out.html [...]` - emit a self-contained HTML page."""
+    parser = argparse.ArgumentParser(
+        prog="apidocgen export",
+        description=(
+            "Export the API spec as a single self-contained HTML file "
+            "with all Swagger UI assets inlined (works offline)."
+        ),
+    )
+    parser.add_argument("--html", required=True, help="Output HTML file path")
+    parser.add_argument(
+        "--spec", default="api-docs.json", help="Path to the OpenAPI spec (default api-docs.json)"
+    )
+    parser.add_argument("--title", default=None, help="Page title override")
+    parser.add_argument("--icon", default=None, help="Favicon image to embed")
+    parser.add_argument(
+        "--timestamp", action="store_true", help="Embed a 'generated at' timestamp"
+    )
+    args = parser.parse_args(argv)
+
+    if not os.path.exists(args.spec):
+        print(f"Error: spec file '{args.spec}' does not exist")
+        return 1
+
+    try:
+        _, spec_dict = _load_spec_text(args.spec)
+    except (ValueError, RuntimeError) as e:
+        print(f"Error: could not read spec '{args.spec}': {e}")
+        return 1
+
+    generated_at = None
+    if args.timestamp:
+        generated_at = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    html = build_standalone_html(
+        spec_dict, title=args.title, icon=args.icon, generated_at=generated_at
+    )
+
+    with open(args.html, "w", encoding="utf-8") as f:
+        f.write(html)
+
+    size_kb = os.path.getsize(args.html) / 1024
+    print(f"Exported self-contained HTML: {args.html} ({size_kb:.0f} KB)")
+    print("All Swagger UI assets are inlined - open this file with networking disabled.")
+    return 0
+
+
+def run_serve(argv):
+    """`apidocgen serve [--spec spec.json] [--port P]` - serve the standalone page."""
+    parser = argparse.ArgumentParser(
+        prog="apidocgen serve",
+        description="Serve the self-contained Swagger UI page (no CDN references).",
+    )
+    parser.add_argument("--spec", default="api-docs.json", help="Path to the OpenAPI spec")
+    parser.add_argument("--port", type=int, default=8000, help="Port to serve on")
+    parser.add_argument("--host", default="127.0.0.1", help="Host to bind to")
+    parser.add_argument("--title", default=None, help="Page title override")
+    args = parser.parse_args(argv)
+
+    if not os.path.exists(args.spec):
+        print(f"Error: spec file '{args.spec}' does not exist")
+        return 1
+
+    import serve as serve_mod
+    try:
+        serve_mod.serve(args.spec, args.port, host=args.host, title=args.title)
+    except KeyboardInterrupt:
+        pass
+    return 0
 
 
 def main(argv=None):
@@ -329,6 +435,10 @@ def main(argv=None):
         return run_check(args[1:])
     if args and args[0] == "generate":
         return run_scan(args[1:])
+    if args and args[0] == "export":
+        return run_export(args[1:])
+    if args and args[0] == "serve":
+        return run_serve(args[1:])
     return run_scan(args)
 
 
