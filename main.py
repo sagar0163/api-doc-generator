@@ -192,7 +192,7 @@ def run_scan(argv):
 
     payload = _build_payload(
         args.project_path, cfg, framework, title, version, output,
-        ai_enrich=args.ai_enrich,
+        ai_enrich=args.ai_enrich or cfg.get("ai", {}).get("enabled"),
     )
     if payload is None:
         return 1
@@ -262,7 +262,11 @@ def run_check(argv):
 
     print(f"Scanning {args.project_path} for API endpoints...")
 
-    payload = _build_payload(args.project_path, cfg, framework, "My API", "1.0.0", output)
+    payload = _build_payload(
+        args.project_path, cfg, framework, "My API", "1.0.0", output, ai_enrich=False
+    )
+    if payload is None:
+        return 1
 
     with open(output) as f:
         committed = f.read()
@@ -311,7 +315,12 @@ def _validate_framework(framework):
 
 
 def _build_payload(project_path, cfg, framework, title, version, output, ai_enrich=False):
-    """Scan ``project_path`` and render the spec payload (yaml or json str)."""
+    """Scan ``project_path`` and render the spec payload (yaml or json str).
+
+    ``ai_enrich`` opts into AI description/example enrichment; the drift
+    checker always passes ``False`` so ``apidocgen check`` stays deterministic
+    and offline.
+    """
     endpoints, schemas = scan_project(project_path, framework=framework, config=cfg)
 
     print(f"Found {len(endpoints)} endpoints")
@@ -329,7 +338,7 @@ def _build_payload(project_path, cfg, framework, title, version, output, ai_enri
 
     spec = generator.generate()
 
-    if ai_enrich or cfg.get("ai", {}).get("enabled"):
+    if ai_enrich:
         ai_cfg = cfg.get("ai", {})
         try:
             spec = ai_enrich.enrich_spec(spec, ai_cfg)
