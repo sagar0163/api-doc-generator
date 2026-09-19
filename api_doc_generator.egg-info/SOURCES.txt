@@ -53,3 +53,4 @@ scanner/symfony.py
 scanner/type_hints.py
 scanner/vapor.py
 scanner/vertx.py
+tests/test_cli.py
