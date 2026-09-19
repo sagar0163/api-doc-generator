@@ -1,0 +1,57 @@
+name: 'apidocgen'
+description: 'Automatically scan your codebase and generate deterministic OpenAPI documentation.'
+inputs:
+  source-dir:
+    description: 'Path to project directory'
+    required: true
+    default: '.'
+  config:
+    description: 'Path to config file'
+    required: false
+  output:
+    description: 'Output file path'
+    required: false
+  fail-on-drift:
+    description: 'Fail if generated docs differ from committed docs'
+    required: false
+    default: 'false'
+branding:
+  icon: 'file-text'
+  color: 'green'
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+        
+    - name: Install dependencies
+      shell: bash
+      run: pip install -r ${{ github.action_path }}/requirements.txt
+
+    - name: Run apidocgen (generate)
+      if: ${{ inputs.fail-on-drift != 'true' }}
+      shell: bash
+      run: |
+        ARGS=("${{ inputs.source-dir }}")
+        if [ -n "${{ inputs.config }}" ]; then
+          ARGS+=("--config" "${{ inputs.config }}")
+        fi
+        if [ -n "${{ inputs.output }}" ]; then
+          ARGS+=("--output" "${{ inputs.output }}")
+        fi
+        python ${{ github.action_path }}/apidocgen generate "${ARGS[@]}"
+
+    - name: Check for drift
+      if: ${{ inputs.fail-on-drift == 'true' }}
+      shell: bash
+      run: |
+        ARGS=("${{ inputs.source-dir }}" "--fail-on-drift")
+        if [ -n "${{ inputs.config }}" ]; then
+          ARGS+=("--config" "${{ inputs.config }}")
+        fi
+        if [ -n "${{ inputs.output }}" ]; then
+          ARGS+=("--output" "${{ inputs.output }}")
+        fi
+        python ${{ github.action_path }}/apidocgen check "${ARGS[@]}"

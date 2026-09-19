@@ -20,11 +20,8 @@ jobs:
       
       - name: Install dependencies
         run: |
-          pip install -r requirements.txt
+          pip install -r requirements.txt pytest
       
       - name: Run tests
         run: |
-          python -c "from scanner import FlaskScanner, FastAPIScanner, ExpressScanner"
-          python -c "from generator import OpenAPIGenerator"
-          python -c "from main import detect_framework"
-          python -m unittest discover -s tests -v
+          pytest tests -v

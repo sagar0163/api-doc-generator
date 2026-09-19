@@ -1,6 +1,6 @@
 # apidocgen
 
-[![docs-fresh](https://img.shields.io/badge/docs-fresh-brightgreen.svg)]()
+[![docs-fresh](https://github.com/sagar0163/api-doc-generator/actions/workflows/docs.yml/badge.svg)](https://github.com/sagar0163/api-doc-generator/actions/workflows/docs.yml)
 [![build](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
 [![PyPI](https://img.shields.io/pypi/v/apidocgen.svg)]()
 
@@ -15,16 +15,23 @@
 
 ## Quickstart
 
-1. **Install**
-   ```bash
-   pip install apidocgen
-   ```
-2. **Generate**
-   ```bash
-   apidocgen /path/to/project
-   ```
-3. **View Docs**
-   Open the generated `api-docs.json` (or `.yaml`) in Swagger UI or Redoc!
+```bash
+pip install apidocgen                                           # 1. install
+apidocgen generate /path/to/project -o api-docs.json           # 2. generate
+apidocgen check /path/to/project -o api-docs.json --fail-on-drift  # 3. gate PRs
+```
+
+Gate your PRs on drift-free docs with the GitHub Action:
+
+```yaml
+- uses: sagar0163/api-doc-generator@main
+  with:
+    source-dir: .
+    output: api-docs.json
+    fail-on-drift: true
+```
+
+View the generated `api-docs.json` (or `.yaml`) in Swagger UI or Redoc.
 
 ## Sample Output
 
@@ -82,9 +89,9 @@ Auto-detection currently supports the following frameworks. For a full breakdown
 Force a specific scanner or define custom configuration via `api-doc.yaml`.
 
 ```bash
-apidocgen /path/to/project --config api-doc.yaml
-apidocgen /path/to/project --framework nestjs
-apidocgen /path/to/project -o api-docs.yaml
+apidocgen generate /path/to/project --config api-doc.yaml
+apidocgen generate /path/to/project --framework nestjs
+apidocgen generate /path/to/project -o api-docs.yaml
 ```
 
 ### Interactive, offline HTML export
