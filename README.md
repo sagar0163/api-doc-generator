@@ -94,6 +94,32 @@ apidocgen generate /path/to/project --framework nestjs
 apidocgen generate /path/to/project -o api-docs.yaml
 ```
 
+
+### Drift Detection (CI / GitOps)
+
+Ensure your committed documentation never goes out of sync with your codebase:
+
+```bash
+# Compare the in-memory generated spec against the committed spec file
+apidocgen check /path/to/project -o api-docs.json
+
+# View the semantic diff (what changed?)
+apidocgen diff /path/to/project -o api-docs.json
+
+# Generate and exit non-zero if the committed spec was stale
+apidocgen generate /path/to/project -o api-docs.json --fail-on-drift
+```
+
+Configure how drift checking works in `api-doc.yaml`:
+```yaml
+check:
+  mode: fail  # or "warn"
+drift:
+  ignore:
+    - info.description
+    - example
+```
+
 ### Interactive, offline HTML export
 
 ```bash

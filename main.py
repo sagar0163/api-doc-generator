@@ -164,6 +164,7 @@ def run_scan(argv):
     parser.add_argument("-t", "--title", default=None, help="API title")
     parser.add_argument("-v", "--version", default=None, help="API version")
     parser.add_argument("--ai-enrich", action="store_true", help="Enable AI enrichment for descriptions and examples")
+    parser.add_argument("--fail-on-drift", action="store_true", help="Fail if committed docs differ from generated docs.")
 
     args = parser.parse_args(argv)
 
@@ -197,11 +198,21 @@ def run_scan(argv):
     if payload is None:
         return 1
 
+    exit_code = 0
+    if args.fail_on_drift and os.path.exists(output):
+        with open(output) as f:
+            committed = f.read()
+        import drift
+        is_drift, diff_report = drift.check_drift(committed, payload, cfg.get("drift", {}).get("ignore", []), output)
+        if is_drift:
+            print(f"::error title=Docs are stale::drift detected in generate")
+            exit_code = 1
+
     with open(output, "w") as f:
         f.write(payload)
 
     print(f"API documentation generated: {output}")
-    return 0
+    return exit_code
 
 
 def run_check(argv):
@@ -271,7 +282,10 @@ def run_check(argv):
     with open(output) as f:
         committed = f.read()
 
-    if payload == committed:
+    import drift
+    is_drift, diff_report = drift.check_drift(committed, payload, cfg.get("drift", {}).get("ignore", []), output)
+
+    if not is_drift:
         print(f"Docs are up to date: {output}")
         return 0
 
@@ -279,12 +293,22 @@ def run_check(argv):
         f"::error title=Docs are stale::docs are stale - the committed spec "
         f"'{output}' does not match what the current source would generate."
     )
+    if diff_report:
+        print("Drift report:")
+        for line in diff_report:
+            print(line)
+            
     print(
-        f"Run `apidocgen generate` to fix:\n"
+        f"\nRun `apidocgen generate` to fix:\n"
         f"  apidocgen generate {args.project_path} --output {output}\n"
         f"Or let CI do it: uses: sagar0163/api-doc-generator@main with fail-on-drift: true\n"
         "Then commit the regenerated spec and re-push."
     )
+    
+    mode = cfg.get("check", {}).get("mode", "fail")
+    if mode == "warn" and not args.fail_on_drift:
+        print("Warning: drift detected, but check.mode is 'warn'. Exiting 0.")
+        return 0
     return 1
 
 
@@ -348,8 +372,8 @@ def _build_payload(project_path, cfg, framework, title, version, output, ai_enri
 
     if output.endswith((".yaml", ".yml")):
         import yaml
-        return yaml.dump(spec, default_flow_style=False)
-    return json.dumps(spec, indent=2)
+        return yaml.dump(spec, default_flow_style=False, sort_keys=True)
+    return json.dumps(spec, indent=2, sort_keys=True)
 
 
 def _load_spec_text(spec_path):
@@ -440,6 +464,8 @@ def main(argv=None):
     args = list(sys.argv[1:] if argv is None else argv)
     if args and args[0] == "frameworks":
         return run_frameworks(args[1:])
+    if args and args[0] == "diff":
+        return run_diff(args[1:])
     if args and args[0] == "check":
         return run_check(args[1:])
     if args and args[0] == "generate":
@@ -453,3 +479,66 @@ def main(argv=None):
 
 if __name__ == "__main__":
     sys.exit(main())
+
+def run_diff(argv):
+    """`apidocgen diff <project_path> [...]` - print path-level drift."""
+    import argparse
+    import os
+    import config as configlib
+    
+    parser = argparse.ArgumentParser(
+        prog="apidocgen diff",
+        description="Print changes between committed API docs and the current source.",
+    )
+    parser.add_argument("project_path", help="Path to project directory")
+    parser.add_argument("-c", "--config", default=None, help="Path to config file")
+    parser.add_argument("-f", "--framework", default=None, help="Framework id to force")
+    parser.add_argument("-o", "--output", default=None, help="Committed spec file to compare")
+
+    args = parser.parse_args(argv)
+
+    if not os.path.exists(args.project_path):
+        print(f"Error: Project path '{args.project_path}' does not exist")
+        return 1
+
+    try:
+        cfg = configlib.load_config(args.config)
+    except Exception as e:
+        print(f"Error: {e}")
+        return 1
+        
+    # Lazy import to avoid circular dependency
+    
+    
+    framework = _resolve_framework(args.framework, cfg)
+    if framework is not None:
+        err = _validate_framework(framework)
+        if err is not None:
+            print(err)
+            return 1
+
+    output = args.output or cfg.get("output") or "api-docs.json"
+
+    if not os.path.exists(output):
+        print(f"Error: committed docs file '{output}' not found.")
+        return 1
+
+    payload = _build_payload(args.project_path, cfg, framework, "My API", "1.0.0", output, ai_enrich=False)
+    if payload is None:
+        return 1
+
+    with open(output) as f:
+        committed = f.read()
+
+    import drift
+    is_drift, diff_report = drift.check_drift(committed, payload, cfg.get("drift", {}).get("ignore", []), output)
+
+    if not diff_report:
+        print("No semantic changes detected.")
+        return 0
+
+    print("Diff report:")
+    for line in diff_report:
+        print(line)
+        
+    return 1 if is_drift else 0
